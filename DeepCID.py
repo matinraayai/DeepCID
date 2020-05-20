@@ -17,7 +17,8 @@ def accuracy(predictions, labels):
           / predictions.shape[0])  
 
 if __name__ == '__main__':
-    path = u'E:/DeepCID'
+    path = u'./data/DeepCID'
+    #Load the mixture spectrum, its' labels and components information 
     #Load the mixture spectrum, its' labels and components information 
     datafile1 = path+'/mixture.npy'
     Xtest = np.load(datafile1) 
@@ -84,16 +85,3 @@ if __name__ == '__main__':
             if (ypre[h,0]>=0.5):
                 print(names[h])                   
         print('The prediction finished')
-      
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    

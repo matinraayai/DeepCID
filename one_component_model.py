@@ -71,7 +71,7 @@ train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 saver = tf.train.Saver()
 
 
-path = u'E:/DeepCID'
+path = u'./data/DeepCID'
 compound = 0
 
 datafile1 = path+'/augmented_data/'+str(compound)+'component.npy'
