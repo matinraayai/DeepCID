@@ -1,0 +1,71 @@
+import numpy as np
+import csv
+import tensorflow as tf
+import os
+from model import accuracy
+
+
+def test():
+    path = u'./data/DeepCID'
+    # Load the mixture spectrum, its' labels and components information
+    datafile1 = path + '/mixture.npy'
+    Xtest = np.load(datafile1)
+
+    datafile2 = path + '/label.npy'
+    label = np.load(datafile2)
+
+    n = label.shape[0]
+
+    csv_reader = csv.reader(open(path + '/namedata.csv', encoding='utf-8'))
+    names = [row for row in csv_reader]
+    ypred = np.zeros((n * Xtest.shape[0], 2))
+
+    # Set the root directory of models and reload the models one by one
+    root = path + '/model'
+    list_dirs = os.walk(root)
+    i = 0
+    for root, dirs, files in list_dirs:
+        for i, d in enumerate(dirs):
+            tf.reset_default_graph()
+
+            Y1 = label[i, :].reshape([Xtest.shape[0], 1])
+            Y2 = np.ones(Y1.shape) - Y1
+            Ytest = np.concatenate((Y1, Y2), axis=1)
+
+            os.chdir(os.path.join(root, d))
+            datafile = u'./X_scale.npy'
+            X_scale = np.load(datafile)
+            Xtest_scale = (Xtest - X_scale[0]) / X_scale[1]
+
+            with tf.Session() as sess:
+                new_saver = tf.train.import_meta_graph('./compoent.ckpt.meta')
+                new_saver.restore(sess, "./compoent.ckpt")
+                graph = tf.get_default_graph()
+                xs = graph.get_operation_by_name('xs').outputs[0]
+                # ys=graph.get_operation_by_name('ys').outputs[0]
+                keep_prob = graph.get_operation_by_name('keep_prob').outputs[0]
+
+                prediction = graph.get_tensor_by_name('prediction:0')
+                test_ypred = sess.run(prediction, feed_dict={xs: Xtest_scale, keep_prob: 1.0})
+            ypred[i * Xtest.shape[0]:(i + 1) * Xtest.shape[0], :] = test_ypred
+            print('component', i, 'finished.', 'The test accuracy %.1f%%' %
+                  accuracy(ypred[i * Xtest.shape[0]:(i + 1) * Xtest.shape[0], :], Ytest))
+
+    # Print the components' name that are exited in the mixtures
+    for j in range(Xtest.shape[0]):
+        print('The', j, 'th sample contains: ')
+
+        # Yreal is design for calculate the accuracy.
+        y_real1 = label[:, j - Xtest.shape[0]].reshape([n, 1])
+        y_real2 = np.ones(y_real1.shape) - y_real1
+        y_real = np.concatenate((y_real1, y_real2), axis=1)
+
+        ypre = np.zeros((n, 2))
+        for k in range(n):
+            ypre[k, :] = ypred[j, :]
+            j = j + Xtest.shape[0]
+
+        for h in range(n):
+            if ypre[h, 0] >= 0.5:
+                print(names[h])
+        print('The prediction finished')
