@@ -59,7 +59,7 @@ def train(model: tf.keras.Model, compound=0, data_path=u'./augmented_data/',
     ax2.plot(TIMES, loss_valid, 'g')
     ax2.set_ylabel('Loss')
 
-    tf.keras.models.save_model(model, save_file)
+    model.save(save_file)
     print("Saved model at %s." % save_file)
 
 
